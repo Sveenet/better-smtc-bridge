@@ -11,8 +11,10 @@ Better SMTC Bridge 1.0.0 extends [nutty's original SMTC Bridge](https://github.c
 1. Download the Windows x64 ZIP from Releases and extract the whole folder.
 2. Close the original SMTC Bridge if it is running, including its system-tray instance. Both applications use port 5000 and cannot run there simultaneously.
 3. Open **Better SMTC Bridge.exe**. The packaged release includes Python and its required libraries; you do not need to install Python separately.
-4. In the local controls that open, select the headphones, speakers, or virtual output carrying your music, then click **Start visualizing**.
-5. The app runs in your Windows system tray. You can close the browser controls while streaming. Right-click the tray icon to reopen **Audio Controls**, or choose **Quit** to stop the bridge and release port 5000.
+4. On the first launch, select the headphones, speakers, or virtual output carrying your music in the local controls, then click **Start visualizing**. Your choice is saved automatically.
+5. On later launches, the app stays in the Windows system tray and reconnects to that output without reopening the selection page. Right-click the tray icon to open **Audio Controls** when you want to change it, or choose **Quit** to stop the bridge and release port 5000.
+
+The output is remembered by name so Windows can renumber devices without losing your selection. If it is temporarily unavailable, the app waits and retries instead of switching to another output. **Stop audio** saves the stopped state; use **Start visualizing** to enable it again.
 
 Your existing metadata address stays `http://127.0.0.1:5000/now-playing`. The additional audio connection is `ws://127.0.0.1:5000/audio`.
 
@@ -40,7 +42,8 @@ The bridge supplies audio measurements; the widget renders the visuals and extra
 - A shared output includes **all applications playing through that output**. Choosing a song application in your widget filters song metadata; it does not isolate that application's audio.
 - For music-only reaction, route music to a separate output or virtual device and choose that output in the bridge.
 - Audio samples stay in memory. The app does not record audio files, upload audio, or call a cloud service.
-- Audio capture starts only after you choose **Start visualizing**, or explicitly request a device in headless mode. Metadata remains available when audio capture is stopped.
+- Audio capture is enabled when you choose **Start visualizing**, or explicitly request a device in headless mode. Once enabled, it resumes from your saved output on later launches. Metadata remains available when audio capture is stopped.
+- The selected output and enabled/stopped preference are saved locally in `%LOCALAPPDATA%\BetterSMTCBridge\settings.json`. No recordings or private credentials are stored there.
 - One capture and analysis pipeline serves all connected overlays, at up to 30 updates per second.
 
 ## Local API
@@ -66,7 +69,7 @@ WebSocket clients cannot start recording or change devices. Local capture contro
 - The music player must publish Windows SMTC information for song titles and artwork to appear. Unsupported players may still supply output audio, but no song metadata.
 - Output loopback is device-based. Version 1.0.0 does not provide per-application audio capture.
 - Only one service can use port 5000 at a time. A port-conflict message tells you to close the other bridge; the app does not silently change ports or terminate another program.
-- If a device is disconnected, use **Refresh outputs**, choose the available device, and start again.
+- If the saved output is disconnected, the bridge waits for it and retries automatically. Use **Audio Controls** and **Refresh outputs** if you want to choose a different output.
 - The release is not digitally signed. Verify that you downloaded it from this repository and compare the included SHA-256 checksums if needed.
 
 ## Run from source

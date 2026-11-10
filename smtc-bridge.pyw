@@ -40,6 +40,7 @@ import winrt.windows.foundation
 import winrt.windows.foundation.collections
 import winrt.windows.media
 from artwork import ArtworkCache
+from prefs import Preferences
 import html
 from collections import OrderedDict
 
@@ -511,6 +512,7 @@ try:
     service_ready = threading.Event()
     service_error = None
     service_tray = None
+    PREFERENCES_PATH = None
 
     def stop_tray():
         if service_tray:
@@ -522,7 +524,7 @@ try:
         async def run():
             global service_loop, service_bridge
             service_loop = asyncio.get_running_loop()
-            service_bridge = Bridge(port=PORT, metadata_reader=get_all_media_info, on_stop=stop_tray)
+            service_bridge = Bridge(port=PORT, metadata_reader=get_all_media_info, on_stop=stop_tray, preferences=Preferences(PREFERENCES_PATH))
             task = asyncio.create_task(service_bridge.run())
             while not service_bridge.started and not task.done():
                 await asyncio.sleep(.05)
@@ -546,8 +548,10 @@ try:
             import ctypes
             ctypes.windll.user32.MessageBoxW(None, service_error or "The local bridge could not start.", "Better SMTC Bridge", 0x10)
             return
-        # Open output controls once; actual audio capture requires an explicit Start.
-        webbrowser.open(f"http://{DISPLAY_HOST}:{PORT}/")
+        # Show setup only until the user has chosen an output. Later launches
+        # restore the saved choice quietly; controls remain available in the tray.
+        if not service_bridge.preferences.configured:
+            webbrowser.open(f"http://{DISPLAY_HOST}:{PORT}/")
         setup_tray()
         if service_loop and service_loop.is_running():
             service_loop.call_soon_threadsafe(service_bridge.stopped.set)

@@ -1,9 +1,10 @@
 Better SMTC Bridge 1.0.0 combines Windows song information and real audio analysis in one local app.
 
-Download the **Windows x64 ZIP**, extract the entire folder, close the original SMTC Bridge, and open **Better SMTC Bridge.exe**. Select your music output and click **Start visualizing**. No separate Python installation is needed for the packaged release.
+Download the **Windows x64 ZIP**, extract the entire folder, close the original SMTC Bridge, and open **Better SMTC Bridge.exe**. Select your music output once and click **Start visualizing**. Later launches reconnect automatically and stay in the tray without reopening the selection page. No separate Python installation is needed for the packaged release.
 
 - Existing song metadata remains on port **5000**.
 - Audio waveforms and spectrum use **ws://127.0.0.1:5000/audio**.
+- Your output selection is remembered by name. Missing outputs are retried automatically; Stop audio also remains stopped across restarts.
 - Compatible with CreatorSuite Universal Music's six-color creative themes.
 - Audio remains in memory on your PC; no microphone capture, recordings, or cloud uploads.
 - Includes README, license, dependency notices, and SHA-256 checksums.

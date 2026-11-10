@@ -26,7 +26,7 @@ by the MIT terms for new contributions:
 
 | Files | Treatment |
 | --- | --- |
-| `smtc-bridge.pyw` | Adapted from the original main program. Preserves its metadata/session workflow, Flask routes, tray menu and startup behavior; adds the shared local audio service, PyWinRT compatibility, bounded in-memory artwork cache and integration fixes. The Customize Overlay and Try Widgets tray actions open CreatorSuite destinations. Quit closes the native tray, gives the service a bounded cleanup interval and preserves the original process-exit behavior. Credit to nutty remains preserved in the source and project documentation. |
+| `smtc-bridge.pyw` | Adapted from the original main program. Preserves its metadata/session workflow, Flask routes, tray menu and startup behavior; adds the shared local audio service, PyWinRT compatibility, bounded in-memory artwork cache and integration fixes. The Customize Overlay and Try Widgets tray actions open CreatorSuite destinations. Quit closes the native tray, gives the service a bounded cleanup interval and preserves the original process-exit behavior. Saved per-user output preferences enable automatic capture on later launches, and the browser opens automatically only before an output has been configured. Credit to nutty remains preserved in the source and project documentation. |
 | `build.bat`, `launch.bat` | Adapted upstream launch/build entry points. |
 | `smtc-bridge.ico`, `icon.png`, `icon.af` | Unmodified original upstream assets. |
 | `settings.ini`, `smtc-bridge.spec` | Unmodified upstream configuration/build files retained for provenance and compatibility. |
@@ -39,7 +39,7 @@ upstream permission for using the surrounding original work.
 
 The following are newly implemented additions by Sveenet and are covered by
 the MIT terms in the root LICENSE: `bridge.py`, `audio.py`, `server.py`,
-`metadata.py`, `artwork.py`, `control.html`, `make_icon.py`, generated
+`metadata.py`, `artwork.py`, `prefs.py`, `control.html`, `make_icon.py`, generated
 `assets/icon.png` and `assets/icon.ico`, `tests/`, `build.ps1`,
 `package_release.py`, `install_deps.py`, `Start Better SMTC Bridge.bat`,
 `requirements.txt`, `requirements-build.txt`, `requirements-lock.txt`,

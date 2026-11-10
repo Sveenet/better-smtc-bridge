@@ -11,6 +11,9 @@ vm.runInContext(script,context);
 const run=()=>vm.runInContext('devices()',context);
 (async()=>{
  await run();assert.equal(nodes.output.value,'44');assert.equal(nodes.start.disabled,false);
+ nodes.output.value='';fetcher=async()=>({ok:true,json:async()=>({devices:outputs,active_device:{id:12},saved_output:'Windows default'})});await run();assert.equal(nodes.output.value,'12');
+ nodes.output.value='';fetcher=async()=>({ok:true,json:async()=>({devices:outputs,saved_output:'First output'})});await run();assert.equal(nodes.output.value,'12');
+ fetcher=async()=>({ok:true,json:async()=>({devices:outputs})});
  nodes.output.value='12';await run();assert.equal(nodes.output.value,'12');
  nodes.output.value='99';await run();assert.equal(nodes.output.value,'44');
  let resolve;fetcher=()=>new Promise(r=>{resolve=r;});const pending=run();assert.equal(nodes.start.disabled,true);assert.equal(nodes.output.disabled,true);assert.equal(nodes.refresh.disabled,true);resolve({ok:true,json:async()=>({devices:outputs})});await pending;assert.equal(nodes.refresh.disabled,false);
@@ -24,5 +27,5 @@ const run=()=>vm.runInContext('devices()',context);
  requests[1]({ok:true,json:async()=>({audio_connected:false,level:0,clients:0})});await newer;
  requests[0]({ok:true,json:async()=>({audio_connected:true,level:.5,clients:1})});await older;
  assert.equal(nodes.state.textContent,'Audio stopped · song information is ready');assert.equal(nodes.level.value,0);
- console.log('PASS: stale status cannot overwrite Stop;  default, preserved selection, vanished selection, loading, fallback, no outputs, request failure, error persistence');
+ console.log('PASS: active and saved selection; stale status cannot overwrite Stop;  default, preserved selection, vanished selection, loading, fallback, no outputs, request failure, error persistence');
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import sys
 import time
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -13,6 +14,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from audio import Analyzer, OutputCapture
 from artwork import ArtworkCache
+from prefs import Preferences
 from server import Bridge, origin_allowed
 
 
@@ -136,9 +138,10 @@ class StubCapture:
 
 class APITests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
+        self.preferences_dir = tempfile.TemporaryDirectory()
         self.patcher = patch("server.OutputCapture", StubCapture)
         self.patcher.start()
-        self.bridge = Bridge(port=0)
+        self.bridge = Bridge(port=0, preferences=Preferences(Path(self.preferences_dir.name) / "settings.json"))
         self.task = asyncio.create_task(self.bridge.run())
         for _ in range(100):
             if self.bridge.started or self.task.done():
@@ -154,6 +157,7 @@ class APITests(unittest.IsolatedAsyncioTestCase):
         await self.task
         await self.client.close()
         self.patcher.stop()
+        self.preferences_dir.cleanup()
 
     async def test_health_origin_and_control_protection(self):
         async with self.client.get(self.url + "/health") as response:

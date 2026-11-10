@@ -9,6 +9,7 @@ from aiohttp import web, WSMsgType
 
 from audio import OutputCapture
 from metadata import Metadata
+from prefs import Preferences
 
 APP_NAME = "Better SMTC Bridge"
 VERSION = "1.0.0"
@@ -27,7 +28,7 @@ def origin_allowed(origin, extra=()):
 
 
 class Bridge:
-    def __init__(self, port=5000, allowed_origins=(), metadata_reader=None, on_stop=None):
+    def __init__(self, port=5000, allowed_origins=(), metadata_reader=None, on_stop=None, preferences=None):
         self.port = port
         self.allowed_origins = allowed_origins
         self.token = secrets.token_urlsafe(32)
@@ -43,13 +44,20 @@ class Bridge:
         self.closing = False
         self.on_stop = on_stop
         self.audio_lock = asyncio.Lock()
+        self.preferences = preferences if preferences is not None else Preferences()
+        self.resume_task = None
+        self.audio_message = None
 
     def health(self):
         return {"application": APP_NAME, "version": VERSION, "port": self.port,
+                "ready": self.started and not self.closing,
                 "audio_connected": bool(self.capture and self.capture.active),
                 "metadata_available": self.metadata.available,
                 "device": self.capture.device if self.capture else None,
-                "level": self.latest_level, "clients": len(self.clients)}
+                "level": self.latest_level, "clients": len(self.clients),
+                "saved_output": self.preferences.output_name,
+                "audio_enabled": self.preferences.enabled, "configured": self.preferences.configured,
+                "audio_message": self.audio_message}
 
     @web.middleware
     async def guard(self, request, handler):
@@ -92,11 +100,42 @@ class Bridge:
     async def set_device(self, index):
         async with self.audio_lock:
             await asyncio.to_thread(self.capture.start, index)
+            try:
+                self.preferences.save(self.capture.device["name"], True)
+            except RuntimeError:
+                self.preferences.enabled = False
+                await asyncio.to_thread(self.capture.stop)
+                raise
+            self.audio_message = None
 
     async def stop_audio(self):
         async with self.audio_lock:
+            self.preferences.enabled = False
             await asyncio.to_thread(self.capture.stop)
+            if self.preferences.configured:
+                self.preferences.save(self.preferences.output_name, False)
+            self.audio_message = None
         self.latest_level = 0
+
+    async def resume_saved_output(self):
+        async with self.audio_lock:
+            if not self.preferences.enabled or not self.preferences.configured or self.capture.active:
+                return
+            try:
+                devices = await asyncio.to_thread(self.capture.devices)
+                matches = [device for device in devices if device["name"] == self.preferences.output_name]
+                if len(matches) != 1:
+                    self.audio_message = "Waiting for your saved audio output. It will reconnect automatically."
+                    return
+                await asyncio.to_thread(self.capture.start, matches[0]["id"])
+                self.audio_message = None
+            except (OSError, ValueError, RuntimeError):
+                self.audio_message = "Your saved output is unavailable. Retrying automatically."
+
+    async def watch_saved_output(self):
+        while True:
+            await asyncio.sleep(5)
+            await self.resume_saved_output()
 
     async def route_health(self, request):
         return web.json_response(self.health())
@@ -112,7 +151,9 @@ class Bridge:
         return web.Response(text="<body style='background:#121212;color:white;font-family:sans-serif;padding:20px'><h3>Active Audio Sources:</h3><ul>" + items + "</ul></body>", content_type="text/html")
 
     async def route_devices(self, request):
-        return web.json_response({"devices": await self.devices()})
+        return web.json_response({"devices": await self.devices(),
+                                  "active_device": self.capture.device if self.capture.active else None,
+                                  "saved_output": self.preferences.output_name})
 
     async def route_start(self, request):
         try:
@@ -126,8 +167,11 @@ class Bridge:
             return web.json_response({"error": str(error)}, status=400)
 
     async def route_stop(self, request):
-        await self.stop_audio()
-        return web.json_response(self.health())
+        try:
+            await self.stop_audio()
+            return web.json_response(self.health())
+        except RuntimeError as error:
+            return web.json_response({"error": str(error)}, status=500)
 
     async def route_quit(self, request):
         asyncio.get_running_loop().call_later(.1, self.stopped.set)
@@ -202,7 +246,10 @@ class Bridge:
                 raise RuntimeError(self.error) from None
             if device is not None:
                 await self.set_device(device)
+            else:
+                await self.resume_saved_output()
             self.pump = asyncio.create_task(self.broadcast())
+            self.resume_task = asyncio.create_task(self.watch_saved_output())
             self.started = True
             await self.stopped.wait()
             self.closing = True
@@ -211,6 +258,9 @@ class Bridge:
         finally:
             self.closing = True
             self.started = False
+            if self.resume_task:
+                self.resume_task.cancel()
+                await asyncio.gather(self.resume_task, return_exceptions=True)
             if self.pump:
                 self.pump.cancel()
                 await asyncio.gather(self.pump, return_exceptions=True)

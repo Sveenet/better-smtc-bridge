@@ -25,6 +25,7 @@ import pystray
 import plyer
 from PIL import Image
 from artwork import ArtworkCache
+from prefs import Preferences
 import winrt.windows.foundation
 import winrt.windows.foundation.collections
 import winrt.windows.media
@@ -41,11 +42,12 @@ def main():
     parser.add_argument("--device", type=int, help="Explicitly start the listed WASAPI loopback output index (headless only).")
     parser.add_argument("--allow-origin", action="append", default=[], help="Allow an additional exact widget website origin (headless only).")
     parser.add_argument("--test-port", type=int, default=5000, help=argparse.SUPPRESS)
+    parser.add_argument("--test-preferences-file", help=argparse.SUPPRESS)
     parser.add_argument("--version", action="version", version=APP_NAME + " " + VERSION)
     args = parser.parse_args()
     if args.headless:
         async def run():
-            bridge = Bridge(args.test_port, args.allow_origin)
+            bridge = Bridge(args.test_port, args.allow_origin, preferences=Preferences(args.test_preferences_file))
             await bridge.run(args.device)
         try:
             asyncio.run(run())
@@ -58,9 +60,10 @@ def main():
     else:
         original = load_original()
         original.PORT = args.test_port
+        original.PREFERENCES_PATH = args.test_preferences_file
         if original.is_already_running():
-            import webbrowser
-            webbrowser.open(f"http://127.0.0.1:{args.test_port}/")
+            if not Preferences(args.test_preferences_file).configured:
+                webbrowser.open(f"http://127.0.0.1:{args.test_port}/")
             return 0
         original.main()
     return 0

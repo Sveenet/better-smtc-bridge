@@ -10,7 +10,7 @@ executable = distribution / "Better SMTC Bridge.exe"
 if not executable.is_file():
     raise SystemExit("Build the standalone executable first.")
 archive = distribution / f"Better-SMTC-Bridge-{version}-Windows-x64.zip"
-source_files = ["bridge.py", "audio.py", "server.py", "metadata.py", "artwork.py", "control.html", "make_icon.py",
+source_files = ["bridge.py", "audio.py", "server.py", "metadata.py", "artwork.py", "prefs.py", "control.html", "make_icon.py",
                 "smtc-bridge.pyw", "smtc-bridge.ico", "icon.png", "icon.af", "smtc-bridge.spec", "settings.ini", "build.bat", "launch.bat",
                 "install_deps.py", "build.ps1", "package_release.py", "windows-version-info.txt", "requirements.txt",
                 "requirements-build.txt", "requirements-lock.txt", "Start Better SMTC Bridge.bat"]
