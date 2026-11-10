@@ -1,5 +1,8 @@
 # Versioning
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.0.0"
+UPSTREAM_VERSION = "1.0.1"
+# Better SMTC Bridge additions by Sveenet. Original SMTC Bridge code by nutty.
+# See LICENSE and docs/provenance.md for separate rights and private permission.
 DEVELOPER = "nutty"
 
 
@@ -29,10 +32,15 @@ import hashlib
 from PIL import Image
 from flask import Flask, jsonify
 from flask_cors import CORS
-from winsdk.windows.media.control import GlobalSystemMediaTransportControlsSessionManager as SMTC
-from winsdk.windows.storage.streams import DataReader
+from winrt.windows.media.control import GlobalSystemMediaTransportControlsSessionManager as SMTC
+from winrt.windows.storage.streams import DataReader
 from plyer import notification
-import winsdk._winrt as winrt
+import winrt.runtime as winrt
+import winrt.windows.foundation
+import winrt.windows.foundation.collections
+import winrt.windows.media
+from artwork import ArtworkCache
+import html
 from collections import OrderedDict
 
 
@@ -78,8 +86,11 @@ try:
 
     def is_already_running():
         import ctypes
-        mutex_name = f"Global\\SMTCBridge_{APP_VERSION}_{DEVELOPER}"
+        mutex_name = "Local\\BetterSMTCBridge"
         kernel32 = ctypes.windll.kernel32
+        kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
+        kernel32.CreateMutexW.restype = ctypes.c_void_p
+        kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
         
         # Store handle globally or in a way that prevents garbage collection
         is_already_running.h_mutex = kernel32.CreateMutexW(None, False, mutex_name)
@@ -91,7 +102,7 @@ try:
             return True
         return False
 
-    if is_already_running():
+    if __name__ == "__main__" and is_already_running():
         print("Another instance is already running. Exiting...")
         log_crash("Another instance is already running. Exiting...")
         sys.exit()
@@ -108,7 +119,7 @@ try:
             # PyInstaller creates a temp folder and stores path in _MEIPASS
             base_path = sys._MEIPASS
         except Exception:
-            base_path = os.path.abspath(".")
+            base_path = os.path.dirname(os.path.abspath(__file__))
         return os.path.join(base_path, relative_path)
 
     def load_settings():
@@ -121,14 +132,11 @@ try:
         
         if os.path.exists(ini_path):
             config.read(ini_path)
-        else:
-            with open(ini_path, 'w') as f:
-                config.write(f)
         return config
 
     settings = load_settings()
-    HOST = settings.get('SERVER', 'Host')
-    PORT = settings.getint('SERVER', 'Port')
+    HOST = "127.0.0.1"  # Better SMTC Bridge serves only this computer.
+    PORT = 5000  # Shared metadata and audio port; unchanged from SMTC Bridge.
 
     def get_local_ip():
         try:
@@ -147,8 +155,7 @@ try:
 
     # Create a local temp directory for thumbnails
     THUMB_DIR = os.path.join(tempfile.gettempdir(), 'smtc_bridge_thumbs')
-    if not os.path.exists(THUMB_DIR):
-        os.makedirs(THUMB_DIR)
+    # Legacy artwork route retained; modern artwork stays in memory only.
 
 
 
@@ -164,6 +171,7 @@ try:
     # Thumbnail cache to avoid reprocessing the same artwork repeatedly
     MAX_CACHE_SIZE = 50               # Maximum number of unique thumbnails to cache
     thumb_cache = OrderedDict()
+    track_artwork = ArtworkCache()
 
     async def get_all_media_info():            
         try:
@@ -303,44 +311,9 @@ try:
                     "Thumbnail": None 
                 }
 
-                # Read thumbnail and convert straight to Base64
-                thumb_url = None
-                if raw_media and raw_media.thumbnail:
-                    try:
-                        stream_ref = raw_media.thumbnail
-                        stream = await stream_ref.open_read_async()
-
-                        if stream.size > 0:
-                            reader = DataReader(stream.get_input_stream_at(0))
-                            await reader.load_async(stream.size)
-                            buffer = bytearray(stream.size)
-                            reader.read_bytes(buffer)
-                            
-                            # Hash the raw bytes to see if the artwork is unique
-                            img_hash = hashlib.md5(buffer).hexdigest()
-                            
-                            # If we've already processed this exact image bytes, grab it from cache instantly
-                            if img_hash in thumb_cache:
-                                thumb_cache.move_to_end(img_hash)
-                                thumb_url = thumb_cache[img_hash]
-                                # print(f"Using cached artwork for: {media_data['Artist']} - {media_data['Title']}")
-                            else:
-                                print(f"Processing new artwork for: {media_data['Artist']} - {media_data['Title']}")
-                                
-                                # Convert raw Windows bytes straight to Base64
-                                encoded_img = base64.b64encode(bytes(buffer)).decode('utf-8')
-                                thumb_url = f"data:image/jpeg;base64,{encoded_img}"
-                                
-                                # Store it in the cache so we never process it again for this track
-                                thumb_cache[img_hash] = thumb_url
-                                
-                                # If the cache is full, remove the least recently used item
-                                if len(thumb_cache) > MAX_CACHE_SIZE:
-                                    thumb_cache.popitem(last=False)
-                                    print(f"Removed least recently used artwork from cache. Current cache size: {len(thumb_cache)}")
-
-                    except Exception as e:
-                        thumb_url = None
+                # Better SMTC Bridge: retain in-memory data URLs with a bounded,
+                # expiring track cache; never log song names or write artwork files.
+                thumb_url = await track_artwork.get(app_id, raw_media) if raw_media else None
 
                 # Add the Base64 data string to the payload
 
@@ -378,7 +351,7 @@ try:
     def get_startup_shortcut_path():
         # Gets the path to the current user's Startup folder
         startup_dir = os.path.join(os.environ['APPDATA'], r'Microsoft\Windows\Start Menu\Programs\Startup')
-        return os.path.join(startup_dir, 'SMTCBridge.lnk')
+        return os.path.join(startup_dir, 'BetterSMTCBridge.lnk')
 
     def is_start_with_windows():
         return os.path.exists(get_startup_shortcut_path())
@@ -399,15 +372,23 @@ try:
                 
             # Use a quick PowerShell command to create a proper Windows .lnk shortcut
             # This avoids needing external libraries like winshell
-            script_args = f"""
+            script_args = """
             $WshShell = New-Object -ComObject WScript.Shell
-            $Shortcut = $WshShell.CreateShortcut('{shortcut_path}')
-            $Shortcut.TargetPath = '{target_path}'
-            $Shortcut.WorkingDirectory = '{working_dir}'
+            $Shortcut = $WshShell.CreateShortcut($env:BETTER_BRIDGE_SHORTCUT)
+            $Shortcut.TargetPath = $env:BETTER_BRIDGE_TARGET
+            $Shortcut.WorkingDirectory = $env:BETTER_BRIDGE_WORKDIR
+            $Shortcut.Arguments = $env:BETTER_BRIDGE_ARGUMENTS
             $Shortcut.Save()
             """
             import subprocess
-            subprocess.run(["powershell", "-Command", script_args], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
+            shortcut_environment = os.environ.copy()
+            shortcut_environment.update({
+                "BETTER_BRIDGE_SHORTCUT": shortcut_path,
+                "BETTER_BRIDGE_TARGET": target_path,
+                "BETTER_BRIDGE_WORKDIR": working_dir,
+                "BETTER_BRIDGE_ARGUMENTS": "" if getattr(sys, 'frozen', False) else '"' + os.path.join(working_dir, 'bridge.py') + '"'
+            })
+            subprocess.run(["powershell", "-NoProfile", "-Command", script_args], env=shortcut_environment, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW, check=True)
         else:
             if os.path.exists(shortcut_path):
                 try:
@@ -463,7 +444,7 @@ try:
                 html_list += "<li style='color: #888;'>No active audio sources found.</li>"
             else:
                 for s in sessions:
-                    html_list += f"<li style='margin-bottom: 8px; font-size: 1.1em;'>{s}</li>"
+                    html_list += f"<li style='margin-bottom: 8px; font-size: 1.1em;'>{html.escape(s)}</li>"
             
             html_list += "</ul></body>"
             return html_list
@@ -482,16 +463,20 @@ try:
     # "Quit" menu item
     def on_quit(icon, item):
         icon.stop()
-        os._exit(0)
+        if service_loop and service_bridge:
+            service_loop.call_soon_threadsafe(service_bridge.stopped.set)
 
     # Setup the tray icon
     def setup_tray():
+        global service_tray
         # Set the icon
         image = Image.open(get_resource_path("smtc-bridge.ico"))
         
         # Add the menu items
         menu = pystray.Menu(
-            pystray.MenuItem(f"SMTC Bridge v{APP_VERSION} by {DEVELOPER}", None, enabled=False),
+            pystray.MenuItem(f"Better SMTC Bridge v{APP_VERSION}", None, enabled=False),
+            pystray.MenuItem(f"Based on SMTC Bridge by {DEVELOPER}", None, enabled=False),
+            pystray.MenuItem("Audio Controls", lambda: webbrowser.open(f"http://{DISPLAY_HOST}:{PORT}/"), default=True),
             pystray.Menu.SEPARATOR,            
             pystray.MenuItem("View Data (JSON)", lambda: webbrowser.open(f"http://{DISPLAY_HOST}:{PORT}/now-playing")),
             pystray.MenuItem("View Active Sessions", lambda: webbrowser.open(f"http://{DISPLAY_HOST}:{PORT}/sessions")),
@@ -509,7 +494,8 @@ try:
         )
         
         # Put it all together
-        icon = pystray.Icon("MediaBridge", image, "SMTC Bridge", menu=menu)
+        icon = pystray.Icon("BetterSMTCBridge", image, "Better SMTC Bridge", menu=menu)
+        service_tray = icon
         icon.run()
 
 
@@ -518,39 +504,54 @@ try:
     ### KICK OFF! ###
     #################
 
-    def run_flask():
-        # Disable flask startup messages
-        import logging
-        log = logging.getLogger('werkzeug')
-        log.setLevel(logging.ERROR)
-        
-        # Define a helper to trigger the notification
-        def send_notification():
-            notification.notify(
-                title=f'SMTC Bridge v{APP_VERSION}',
-                # Use the PORT variable here
-                message=f'Server successfully started on port {PORT}',
-                app_icon=get_resource_path('smtc-bridge.ico'),
-                timeout=5,
-            )
-        
-        # Run the notification
-        send_notification()
-        
-        # Start the server
-        try:                
-            app.run(host=HOST, port=PORT, threaded=True, use_reloader=False)
-        except Exception as e:
-            with open("error.txt", "w") as f:
-                f.write(str(e))
+    # Better SMTC Bridge serves original metadata and the new audio stream on one
+    # loopback listener. The legacy Flask route functions above remain available.
+    service_loop = None
+    service_bridge = None
+    service_ready = threading.Event()
+    service_error = None
+    service_tray = None
 
-    if __name__ == '__main__':
+    def run_flask():
+        from server import Bridge
+        global service_loop, service_bridge, service_error
+        async def run():
+            global service_loop, service_bridge
+            service_loop = asyncio.get_running_loop()
+            service_bridge = Bridge(port=PORT, metadata_reader=get_all_media_info)
+            task = asyncio.create_task(service_bridge.run())
+            while not service_bridge.started and not task.done():
+                await asyncio.sleep(.05)
+            if service_bridge.started:
+                service_ready.set()
+            await task
+        try:
+            asyncio.run(run())
+        except Exception as error:
+            service_error = str(error)
+            service_ready.set()
+        finally:
+            if service_tray:
+                service_tray.stop()
+
+    def main():
         flask_thread = threading.Thread(target=run_flask, daemon=True)
         flask_thread.start()
-        
-        # Setup the Tray
+        service_ready.wait()
+        if service_error or not service_bridge or not service_bridge.started:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(None, service_error or "The local bridge could not start.", "Better SMTC Bridge", 0x10)
+            return
+        # Open output controls once; actual audio capture requires an explicit Start.
+        webbrowser.open(f"http://{DISPLAY_HOST}:{PORT}/")
         setup_tray()
-        
+        if service_loop and service_loop.is_running():
+            service_loop.call_soon_threadsafe(service_bridge.stopped.set)
+        flask_thread.join(timeout=5)
+
+    if __name__ == '__main__':
+        main()
+
 except Exception as e:
     log_crash(e)
     sys.exit(1)

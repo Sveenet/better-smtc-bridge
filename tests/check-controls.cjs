@@ -1,0 +1,28 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const html=fs.readFileSync(path.resolve(__dirname,'../control.html'),'utf8');
+assert.match(html,/<option value="">Loading outputs/);
+assert.match(html,/<button class="primary" id="start" disabled>/);
+const script=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace('devices();update();setInterval(update,1000);','');
+const outputs=[{id:12,name:'First output',default:false},{id:44,name:'Windows default',default:true}];
+let fetcher=async()=>({ok:true,json:async()=>({devices:outputs})});
+const nodes={output:{value:'',options:[],disabled:false,replaceChildren(){this.options=[];this.value='';},add(o){this.options.push(o);if(this.options.length===1)this.value=o.value;}},start:{disabled:true},stop:{disabled:false},refresh:{disabled:false},state:{textContent:''},level:{value:0}};
+const context=vm.createContext({document:{getElementById:id=>nodes[id]},Option:class{constructor(text,value){this.text=text;this.value=String(value);}},fetch:(...args)=>fetcher(...args),setInterval(){}});
+vm.runInContext(script,context);
+const run=()=>vm.runInContext('devices()',context);
+(async()=>{
+ await run();assert.equal(nodes.output.value,'44');assert.equal(nodes.start.disabled,false);
+ nodes.output.value='12';await run();assert.equal(nodes.output.value,'12');
+ nodes.output.value='99';await run();assert.equal(nodes.output.value,'44');
+ let resolve;fetcher=()=>new Promise(r=>{resolve=r;});const pending=run();assert.equal(nodes.start.disabled,true);assert.equal(nodes.output.disabled,true);assert.equal(nodes.refresh.disabled,true);resolve({ok:true,json:async()=>({devices:outputs})});await pending;assert.equal(nodes.refresh.disabled,false);
+ fetcher=async()=>({ok:true,json:async()=>({devices:[{id:7,name:'Fallback'}]})});nodes.output.value='99';await run();assert.equal(nodes.output.value,'7');
+ fetcher=async()=>({ok:true,json:async()=>({devices:[]})});await run();assert.equal(nodes.start.disabled,true);assert.equal(nodes.output.value,'');
+ fetcher=async()=>{throw Error('Device refresh failed');};await run();assert.equal(nodes.start.disabled,true);assert.equal(nodes.refresh.disabled,false);assert.equal(nodes.state.textContent,'Device refresh failed');
+ fetcher=async()=>({ok:true,json:async()=>({audio_connected:false,level:0,clients:0})});await vm.runInContext('update()',context);assert.equal(nodes.state.textContent,'Device refresh failed');
+ vm.runInContext("deviceError=''",context);
+ const requests=[];fetcher=()=>new Promise(resolve=>requests.push(resolve));
+ const older=vm.runInContext('update()',context),newer=vm.runInContext('update()',context);
+ requests[1]({ok:true,json:async()=>({audio_connected:false,level:0,clients:0})});await newer;
+ requests[0]({ok:true,json:async()=>({audio_connected:true,level:.5,clients:1})});await older;
+ assert.equal(nodes.state.textContent,'Audio stopped · song information is ready');assert.equal(nodes.level.value,0);
+ console.log('PASS: stale status cannot overwrite Stop;  default, preserved selection, vanished selection, loading, fallback, no outputs, request failure, error persistence');
+})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,0 +1,66 @@
+[
+  {
+    "file": "smtc-bridge.pyw",
+    "upstream_path": "smtc-bridge.pyw",
+    "upstream_commit": "442cdc81290a3127dea3200bcdc5883c820a328e",
+    "upstream_sha256": "c7caf6caa53dcb479b4db9d4fc0242d5a29ad751e3312f63c27f9695cc2f7b4f",
+    "local_sha256": "53fbaef3eb0d813c072f1f9eb8f1d0f961e2cce04d95b215e5a49cf63aee2cb1",
+    "modified": true
+  },
+  {
+    "file": "build.bat",
+    "upstream_path": "build.bat",
+    "upstream_commit": "442cdc81290a3127dea3200bcdc5883c820a328e",
+    "upstream_sha256": "3320c9f85d8f5f5340ced826f4b7acec04f639c7bd9969f2584cf509e4dd0b52",
+    "local_sha256": "e41b58f6172ccb85403b63d213db58d6dbb37c1456d056d75c95b4edb864d856",
+    "modified": true
+  },
+  {
+    "file": "launch.bat",
+    "upstream_path": "launch.bat",
+    "upstream_commit": "442cdc81290a3127dea3200bcdc5883c820a328e",
+    "upstream_sha256": "744f74e041bf99a8d2922f4b1ab4b33c5a3578a977ebe5743ffd027d555c0fc1",
+    "local_sha256": "da9cce55ed15dbce5cdf4107a08eedec7004fdbd70092de3640d3774993f3df6",
+    "modified": true
+  },
+  {
+    "file": "smtc-bridge.ico",
+    "upstream_path": "smtc-bridge.ico",
+    "upstream_commit": "442cdc81290a3127dea3200bcdc5883c820a328e",
+    "upstream_sha256": "0439f599d2d3994b944e292851a7743427372784c7bb4d801cef94b072165e78",
+    "local_sha256": "0439f599d2d3994b944e292851a7743427372784c7bb4d801cef94b072165e78",
+    "modified": false
+  },
+  {
+    "file": "icon.png",
+    "upstream_path": "icon.png",
+    "upstream_commit": "442cdc81290a3127dea3200bcdc5883c820a328e",
+    "upstream_sha256": "e3e4df052e89cf77adeebfc95747a15f914b2f8c3ec2cfd630047dd4394eac11",
+    "local_sha256": "e3e4df052e89cf77adeebfc95747a15f914b2f8c3ec2cfd630047dd4394eac11",
+    "modified": false
+  },
+  {
+    "file": "icon.af",
+    "upstream_path": "icon.af",
+    "upstream_commit": "442cdc81290a3127dea3200bcdc5883c820a328e",
+    "upstream_sha256": "b02c5dab40eef85c54c465aebef11313f81979434476b0062cb697b7bdb473b7",
+    "local_sha256": "b02c5dab40eef85c54c465aebef11313f81979434476b0062cb697b7bdb473b7",
+    "modified": false
+  },
+  {
+    "file": "settings.ini",
+    "upstream_path": "settings.ini",
+    "upstream_commit": "442cdc81290a3127dea3200bcdc5883c820a328e",
+    "upstream_sha256": "d7f150623b40b4cc4bdd3c7c3fc51be93b528c7167480270971301a02caf482c",
+    "local_sha256": "d7f150623b40b4cc4bdd3c7c3fc51be93b528c7167480270971301a02caf482c",
+    "modified": false
+  },
+  {
+    "file": "smtc-bridge.spec",
+    "upstream_path": "smtc-bridge.spec",
+    "upstream_commit": "442cdc81290a3127dea3200bcdc5883c820a328e",
+    "upstream_sha256": "61b252f5c37090cb20023508f0a3abc35e06fa75ff8cafd5f11c6353c5f66a39",
+    "local_sha256": "61b252f5c37090cb20023508f0a3abc35e06fa75ff8cafd5f11c6353c5f66a39",
+    "modified": false
+  }
+]

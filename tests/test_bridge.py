@@ -1,0 +1,196 @@
+"""Offline fixtures: never access a microphone, play audio, or record sound."""
+import asyncio
+import json
+from pathlib import Path
+import sys
+import time
+import unittest
+from unittest.mock import patch
+
+import aiohttp
+import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from audio import Analyzer, OutputCapture
+from artwork import ArtworkCache
+from server import Bridge, origin_allowed
+
+
+class DSPTests(unittest.TestCase):
+    def test_silence_has_no_invented_motion(self):
+        frame = Analyzer().frame(np.zeros(4096))
+        self.assertEqual(len(frame["waveform"]), 256)
+        self.assertEqual(len(frame["spectrum"]), 96)
+        self.assertEqual(frame["level"], 0)
+        self.assertTrue(all(x == 0 for x in frame["waveform"] + frame["spectrum"]))
+
+    def test_known_tone_and_antiphase_stereo(self):
+        analyzer = Analyzer()
+        tone = .5 * np.sin(2 * np.pi * 1000 * np.arange(4096) / 48000)
+        mono = analyzer.frame(tone)
+        stereo = analyzer.frame(np.column_stack((tone, -tone)))
+        strongest = int(np.argmax(stereo["spectrum"]))
+        self.assertTrue(850 < analyzer.centers[strongest] < 1150)
+        self.assertAlmostEqual(stereo["level"], .5 / np.sqrt(2), delta=.01)
+        self.assertEqual(mono["spectrum"], stereo["spectrum"])
+        self.assertGreater(max(stereo["waveform"]), .4)
+
+    def test_malformed_pcm_cannot_emit_nonfinite_values(self):
+        frame = Analyzer().frame([np.nan, np.inf, -np.inf, 5, -5])
+        json.dumps(frame, allow_nan=False)
+        self.assertTrue(all(-1 <= x <= 1 for x in frame["waveform"]))
+        self.assertTrue(all(0 <= x <= 1 for x in frame["spectrum"]))
+
+
+class FakeStream:
+    def __init__(self):
+        self.active = True
+    def is_active(self):
+        return self.active
+    def stop_stream(self):
+        self.active = False
+    def close(self):
+        self.active = False
+
+
+class FakeAudio:
+    def get_device_info_by_index(self, index):
+        return {"index": index, "name": "Fixture output", "isLoopbackDevice": index in (1, 2),
+                "maxInputChannels": 2, "defaultSampleRate": 48000}
+    def open(self, **kwargs):
+        self.callback = kwargs["stream_callback"]
+        return FakeStream()
+    def terminate(self):
+        pass
+
+
+class CaptureTests(unittest.TestCase):
+    def test_explicit_loopback_only_and_clear_on_switch(self):
+        with patch("audio.pa.PyAudio", FakeAudio):
+            capture = OutputCapture()
+            self.assertEqual(capture.frame()["connected"], False)
+            with self.assertRaises(ValueError):
+                capture.start(0)  # A microphone-like device must never be opened.
+            capture.start(1)
+            pcm = np.ones((1024, 2), dtype=np.float32) * .4
+            capture.interface.callback(pcm.tobytes(), 1024, None, 0)
+            self.assertGreater(capture.frame()["level"], .3)
+            capture.start(2)
+            self.assertEqual(capture.frame()["level"], 0)
+            capture.interface.callback(pcm.tobytes(), 1024, None, 0)
+            capture._last_data = time.monotonic() - 1
+            self.assertEqual(capture.frame()["level"], 0)
+            capture.stop()
+            self.assertFalse(capture.frame()["connected"])
+            capture.close()
+
+
+class CacheTests(unittest.IsolatedAsyncioTestCase):
+    async def test_bounded_artwork_cache_retries_missing_and_expires(self):
+        reader = ArtworkCache()
+        calls = []
+        async def thumbnail(value):
+            calls.append(value)
+            return value
+        reader.thumbnail = thumbnail
+        class Session:
+            source_app_user_model_id = "fixture"
+        class Media:
+            title = "fixture"
+            artist = "fixture"
+            album_title = "fixture"
+            thumbnail = None
+        media = Media()
+        self.assertIsNone(await reader.get(Session.source_app_user_model_id, media))
+        media.thumbnail = "data:image/png;base64,fixture"
+        self.assertEqual(await reader.get(Session.source_app_user_model_id, media), media.thumbnail)
+        await reader.get(Session.source_app_user_model_id, media)
+        self.assertEqual(len(calls), 2)
+        key = next(iter(reader.artwork))
+        reader.artwork[key] = (time.monotonic() - 20, "expired")
+        await reader.get(Session.source_app_user_model_id, media)
+        self.assertEqual(len(calls), 3)
+        for i in range(40):
+            media.title = str(i)
+            await reader.get(Session.source_app_user_model_id, media)
+        self.assertEqual(len(reader.artwork), 32)
+
+
+class StubCapture:
+    def __init__(self):
+        self.active = False
+        self.device = None
+    def devices(self):
+        return [{"id": 1, "name": "Fixture output", "default": True}]
+    def start(self, index):
+        if index != 1:
+            raise ValueError("Invalid output")
+        self.active, self.device = True, {"id": 1, "name": "Fixture output"}
+    def stop(self):
+        self.active, self.device = False, None
+    def frame(self):
+        return Analyzer().frame(np.zeros(4096)) if self.active else {"type": "status", "connected": False}
+    def close(self):
+        self.stop()
+
+
+class APITests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.patcher = patch("server.OutputCapture", StubCapture)
+        self.patcher.start()
+        self.bridge = Bridge(port=0)
+        self.task = asyncio.create_task(self.bridge.run())
+        for _ in range(100):
+            if self.bridge.started or self.task.done():
+                break
+            await asyncio.sleep(.02)
+        if self.task.done():
+            await self.task
+        self.url = f"http://127.0.0.1:{self.bridge.port}"
+        self.client = aiohttp.ClientSession()
+
+    async def asyncTearDown(self):
+        self.bridge.stopped.set()
+        await self.task
+        await self.client.close()
+        self.patcher.stop()
+
+    async def test_health_origin_and_control_protection(self):
+        async with self.client.get(self.url + "/health") as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual((await response.json())["application"], "Better SMTC Bridge")
+        for origin in ("https://untrusted.example", "null", "https://localhost.evil.example"):
+            async with self.client.get(self.url + "/health", headers={"Origin": origin}) as response:
+                self.assertEqual(response.status, 403)
+        async with self.client.get(self.url + "/health", headers={"Origin": "https://creator-suite-amv.pages.dev"}) as response:
+            self.assertEqual(response.headers["Access-Control-Allow-Origin"], "https://creator-suite-amv.pages.dev")
+        async with self.client.get(self.url + "/", headers={"Origin": "https://creator-suite-amv.pages.dev"}) as response:
+            self.assertEqual(response.status, 403)
+        async with self.client.post(self.url + "/api/start", json={"device": 1}) as response:
+            self.assertEqual(response.status, 403)
+        headers = {"X-Bridge-Token": self.bridge.token}
+        for malformed in (None, [], {"device": True}, {"device": -1}):
+            async with self.client.post(self.url + "/api/start", data=json.dumps(malformed), headers={**headers, "Content-Type": "application/json"}) as response:
+                self.assertEqual(response.status, 400)
+
+    async def test_websocket_schema_and_stop(self):
+        async with self.client.ws_connect(self.url + "/audio", origin="https://widgets.nutty.gg") as socket:
+            self.assertFalse((await socket.receive_json())["connected"])
+            async with self.client.post(self.url + "/api/start", json={"device": 1}, headers={"X-Bridge-Token": self.bridge.token}) as response:
+                self.assertEqual(response.status, 200)
+            frame = await socket.receive_json(timeout=2)
+            self.assertEqual(frame["type"], "audio-frame")
+            self.assertEqual(frame["version"], 1)
+            self.assertEqual(len(frame["waveform"]), 256)
+            self.assertEqual(len(frame["spectrum"]), 96)
+            self.assertEqual(frame["level"], 0)
+            await self.bridge.stop_audio()
+            for _ in range(35):
+                frame = await socket.receive_json(timeout=2)
+                if frame["type"] == "status":
+                    break
+            self.assertFalse(frame["connected"])
+
+
+if __name__ == "__main__":
+    unittest.main()
