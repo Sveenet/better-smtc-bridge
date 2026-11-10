@@ -481,8 +481,8 @@ try:
             pystray.MenuItem("View Data (JSON)", lambda: webbrowser.open(f"http://{DISPLAY_HOST}:{PORT}/now-playing")),
             pystray.MenuItem("View Active Sessions", lambda: webbrowser.open(f"http://{DISPLAY_HOST}:{PORT}/sessions")),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("★ Customize Overlay", lambda: webbrowser.open(f"https://widgets.nutty.gg/now-playing/settings/")),
-            pystray.MenuItem("★ Try my stream widgets!", lambda: webbrowser.open(f"https://nutty.gg/collections/member-exclusive-widgets")),
+            pystray.MenuItem("★ Customize Overlay", lambda: webbrowser.open(f"https://creator-suite-amv.pages.dev/universal-music/settings/")),
+            pystray.MenuItem("★ Try my stream widgets!", lambda: webbrowser.open(f"https://creator-suite-amv.pages.dev/")),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(
                 "Start with Windows", 
@@ -512,13 +512,17 @@ try:
     service_error = None
     service_tray = None
 
+    def stop_tray():
+        if service_tray:
+            service_tray.stop()
+
     def run_flask():
         from server import Bridge
         global service_loop, service_bridge, service_error
         async def run():
             global service_loop, service_bridge
             service_loop = asyncio.get_running_loop()
-            service_bridge = Bridge(port=PORT, metadata_reader=get_all_media_info)
+            service_bridge = Bridge(port=PORT, metadata_reader=get_all_media_info, on_stop=stop_tray)
             task = asyncio.create_task(service_bridge.run())
             while not service_bridge.started and not task.done():
                 await asyncio.sleep(.05)
@@ -548,6 +552,9 @@ try:
         if service_loop and service_loop.is_running():
             service_loop.call_soon_threadsafe(service_bridge.stopped.set)
         flask_thread.join(timeout=5)
+        # Preserve upstream's final process exit after bounded, graceful cleanup.
+        # Native COM or tray threads must not keep this app alive after Quit.
+        os._exit(0)
 
     if __name__ == '__main__':
         main()

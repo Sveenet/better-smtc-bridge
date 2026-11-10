@@ -26,7 +26,7 @@ by the MIT terms for new contributions:
 
 | Files | Treatment |
 | --- | --- |
-| `smtc-bridge.pyw` | Adapted from the original main program. Preserves its metadata/session workflow, Flask routes, tray menu and startup behavior; adds the shared local audio service, PyWinRT compatibility, bounded in-memory artwork cache and integration fixes. Original attribution remains in the file. |
+| `smtc-bridge.pyw` | Adapted from the original main program. Preserves its metadata/session workflow, Flask routes, tray menu and startup behavior; adds the shared local audio service, PyWinRT compatibility, bounded in-memory artwork cache and integration fixes. The Customize Overlay and Try Widgets tray actions open CreatorSuite destinations. Quit closes the native tray, gives the service a bounded cleanup interval and preserves the original process-exit behavior. Credit to nutty remains preserved in the source and project documentation. |
 | `build.bat`, `launch.bat` | Adapted upstream launch/build entry points. |
 | `smtc-bridge.ico`, `icon.png`, `icon.af` | Unmodified original upstream assets. |
 | `settings.ini`, `smtc-bridge.spec` | Unmodified upstream configuration/build files retained for provenance and compatibility. |

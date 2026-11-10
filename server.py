@@ -27,7 +27,7 @@ def origin_allowed(origin, extra=()):
 
 
 class Bridge:
-    def __init__(self, port=5000, allowed_origins=(), metadata_reader=None):
+    def __init__(self, port=5000, allowed_origins=(), metadata_reader=None, on_stop=None):
         self.port = port
         self.allowed_origins = allowed_origins
         self.token = secrets.token_urlsafe(32)
@@ -40,6 +40,8 @@ class Bridge:
         self.latest_level = 0.0
         self.started = False
         self.error = None
+        self.closing = False
+        self.on_stop = on_stop
         self.audio_lock = asyncio.Lock()
 
     def health(self):
@@ -51,6 +53,8 @@ class Bridge:
 
     @web.middleware
     async def guard(self, request, handler):
+        if self.closing:
+            raise web.HTTPServiceUnavailable(text="The bridge is closing.")
         try:
             host = urlsplit("http://" + request.host).hostname
         except ValueError:
@@ -139,6 +143,10 @@ class Bridge:
         ws = web.WebSocketResponse(heartbeat=15, timeout=.1, max_msg_size=1024, compress=False)
         await ws.prepare(request)
         self.clients.add(ws)
+        if self.closing:
+            self.clients.discard(ws)
+            await ws.close()
+            return ws
         await ws.send_json(self.capture.frame())
         try:
             async for message in ws:
@@ -181,7 +189,7 @@ class Bridge:
                             web.get("/audio", self.route_ws), web.post("/api/start", self.route_start),
                             web.post("/api/stop", self.route_stop), web.post("/api/quit", self.route_quit),
                             web.options("/{tail:.*}", self.route_health)])
-            self.runner = web.AppRunner(app, access_log=None)
+            self.runner = web.AppRunner(app, access_log=None, shutdown_timeout=2)
             await self.runner.setup()
             self.capture = await asyncio.to_thread(OutputCapture)
             try:
@@ -197,7 +205,11 @@ class Bridge:
             self.pump = asyncio.create_task(self.broadcast())
             self.started = True
             await self.stopped.wait()
+            self.closing = True
+            if self.on_stop:
+                self.on_stop()
         finally:
+            self.closing = True
             self.started = False
             if self.pump:
                 self.pump.cancel()
