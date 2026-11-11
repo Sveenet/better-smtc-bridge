@@ -2,7 +2,7 @@
 
 **Song details, album artwork, and real audio analysis for Windows stream overlays.**
 
-Better SMTC Bridge 1.0.0 extends [nutty's original SMTC Bridge](https://github.com/nuttylmao/smtc-bridge) with a live waveform and frequency spectrum. It runs on your own computer and serves both through **port 5000**. This repository and its release are private.
+Better SMTC Bridge 1.0.1 extends [nutty's original SMTC Bridge](https://github.com/nuttylmao/smtc-bridge) with a live waveform and frequency spectrum. It runs on your own computer and serves both through **port 5000**. This repository and its release are private.
 
 [Download the Windows release](https://github.com/Sveenet/better-smtc-bridge/releases/latest) · [Report a problem](https://github.com/Sveenet/better-smtc-bridge/issues)
 
@@ -32,7 +32,7 @@ Open [Universal Music settings](https://creator-suite-amv.pages.dev/universal-mu
 - **Particle Bloom** — particles responding to measured audio energy, with adjustable count, size, and spread.
 - **Aurora Flow** and **Smoke Wisps** — ambient artwork-colored effects with their own motion controls; these also work without audio capture.
 
-Every theme displays six colors taken from the current song artwork: Vibrant, Muted, Dark Vibrant, Dark Muted, Light Vibrant, and Light Muted. Crop the color you want in OBS. The widget settings show layout dimensions and offer a vertical stack, grid, or horizontal row.
+Choose **Artwork color** in the widget settings: Dominant, Vibrant, Muted, Dark Vibrant, Dark Muted, Light Vibrant, or Light Muted. New widget URLs show one visualization, with no cropping needed. Existing six-color URLs retain their layout until replaced. The settings show the suggested OBS source dimensions.
 
 The bridge supplies audio measurements; the widget renders the visuals and extracts artwork colors. These are separate projects. Sample preview animation is explicitly labeled as a demo; live reactive themes use actual measurements and settle when audio stops.
 
@@ -67,7 +67,7 @@ WebSocket clients cannot start recording or change devices. Local capture contro
 
 - Windows 10 or 11, x64, with a working audio output.
 - The music player must publish Windows SMTC information for song titles and artwork to appear. Unsupported players may still supply output audio, but no song metadata.
-- Output loopback is device-based. Version 1.0.0 does not provide per-application audio capture.
+- Output loopback is device-based. Version 1.0.1 does not provide per-application audio capture.
 - Only one service can use port 5000 at a time. A port-conflict message tells you to close the other bridge; the app does not silently change ports or terminate another program.
 - If the saved output is disconnected, the bridge waits for it and retries automatically. Use **Audio Controls** and **Refresh outputs** if you want to choose a different output.
 - The release is not digitally signed. Verify that you downloaded it from this repository and compare the included SHA-256 checksums if needed.

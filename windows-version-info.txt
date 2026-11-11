@@ -1,7 +1,7 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 0, 0, 0),
-    prodvers=(1, 0, 0, 0),
+    filevers=(1, 0, 1, 0),
+    prodvers=(1, 0, 1, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -14,12 +14,12 @@ VSVersionInfo(
       StringTable('040904B0', [
         StringStruct('CompanyName', 'Sveenet'),
         StringStruct('FileDescription', 'Better SMTC Bridge'),
-        StringStruct('FileVersion', '1.0.0'),
+        StringStruct('FileVersion', '1.0.1'),
         StringStruct('InternalName', 'better-smtc-bridge'),
         StringStruct('LegalCopyright', 'Original SMTC Bridge by nutty. Additions Copyright 2026 Sveenet. See bundled licenses.'),
         StringStruct('OriginalFilename', 'Better SMTC Bridge.exe'),
         StringStruct('ProductName', 'Better SMTC Bridge'),
-        StringStruct('ProductVersion', '1.0.0')
+        StringStruct('ProductVersion', '1.0.1')
       ])
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])

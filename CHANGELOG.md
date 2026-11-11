@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 — 2026-11-11
+
+- Keeps audio frames flowing when an overlay disconnects or a browser connection stalls.
+- Bounds failed-client cleanup and isolates transient capture errors from the shared stream.
+- Adds regression coverage for sustained audio, client failures, and recovery.
+- Preserves the saved output, quiet startup, and port 5000.
+
 ## 1.0.0 — 2026-11-10
 
 Initial release of Better SMTC Bridge.

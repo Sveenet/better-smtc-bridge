@@ -12,7 +12,7 @@ from metadata import Metadata
 from prefs import Preferences
 
 APP_NAME = "Better SMTC Bridge"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 TRUSTED_ORIGINS = {"https://creator-suite-amv.pages.dev", "https://widgets.nutty.gg"}
 
 
@@ -47,17 +47,30 @@ class Bridge:
         self.preferences = preferences if preferences is not None else Preferences()
         self.resume_task = None
         self.audio_message = None
+        self.last_broadcast_at = 0.0
+        self.pump_started_at = 0.0
+        self.last_broadcast_error = None
 
     def health(self):
+        broadcast_running = bool(self.pump and not self.pump.done())
+        broadcast_age = max(0, time.monotonic() - self.last_broadcast_at) if self.last_broadcast_at else None
+        broadcast_healthy = broadcast_running and broadcast_age is not None and broadcast_age < 1.5
+        capture_active = bool(self.capture and self.capture.active)
+        audio_message = self.audio_message
+        if self.started and capture_active and not broadcast_healthy and not audio_message:
+            audio_message = "Audio streaming is recovering automatically."
         return {"application": APP_NAME, "version": VERSION, "port": self.port,
                 "ready": self.started and not self.closing,
-                "audio_connected": bool(self.capture and self.capture.active),
+                "audio_connected": capture_active and broadcast_healthy,
+                "broadcast_running": broadcast_running,
+                "last_broadcast_age_ms": round(broadcast_age * 1000) if broadcast_age is not None else None,
+                "last_broadcast_error": self.last_broadcast_error,
                 "metadata_available": self.metadata.available,
                 "device": self.capture.device if self.capture else None,
                 "level": self.latest_level, "clients": len(self.clients),
                 "saved_output": self.preferences.output_name,
                 "audio_enabled": self.preferences.enabled, "configured": self.preferences.configured,
-                "audio_message": self.audio_message}
+                "audio_message": audio_message}
 
     @web.middleware
     async def guard(self, request, handler):
@@ -135,7 +148,32 @@ class Bridge:
     async def watch_saved_output(self):
         while True:
             await asyncio.sleep(5)
+            await self.ensure_broadcast()
             await self.resume_saved_output()
+
+    async def ensure_broadcast(self):
+        if not self.started or self.closing:
+            return
+        previous = self.pump
+        if previous and not previous.done():
+            last_activity = self.last_broadcast_at or self.pump_started_at
+            if time.monotonic() - last_activity < 2:
+                return
+            # A stalled cleanup must not leave every overlay frozen indefinitely.
+            self.last_broadcast_error = "BroadcastStalled"
+            previous.cancel()
+            done, _ = await asyncio.wait({previous}, timeout=.2)
+            if not done:
+                # Keep one pump; do not accumulate tasks if cancellation is refused.
+                return
+        if previous and not previous.cancelled():
+            failure = previous.exception()
+            if failure:
+                # Retain only the error type, never audio or media details.
+                self.last_broadcast_error = type(failure).__name__
+        self.last_broadcast_at = 0.0
+        self.pump_started_at = time.monotonic()
+        self.pump = asyncio.create_task(self.broadcast())
 
     async def route_health(self, request):
         return web.json_response(self.health())
@@ -217,9 +255,14 @@ class Bridge:
                         await asyncio.wait_for(client.send_str(encoded), timeout=.1)
                     except (ConnectionError, asyncio.TimeoutError, RuntimeError):
                         self.clients.discard(client)
-                        await client.close()
+                        try:
+                            await asyncio.wait_for(client.close(), timeout=.1)
+                        except (ConnectionError, asyncio.TimeoutError, RuntimeError):
+                            # Closing an already broken browser cannot stop other clients.
+                            pass
 
                 await asyncio.gather(*(send(client) for client in tuple(self.clients)))
+            self.last_broadcast_at = time.monotonic()
             await asyncio.sleep(max(0, 1 / 30 - (time.monotonic() - started)))
 
     async def run(self, device=None):
@@ -248,9 +291,9 @@ class Bridge:
                 await self.set_device(device)
             else:
                 await self.resume_saved_output()
-            self.pump = asyncio.create_task(self.broadcast())
-            self.resume_task = asyncio.create_task(self.watch_saved_output())
             self.started = True
+            await self.ensure_broadcast()
+            self.resume_task = asyncio.create_task(self.watch_saved_output())
             await self.stopped.wait()
             self.closing = True
             if self.on_stop:
