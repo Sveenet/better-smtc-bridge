@@ -32,9 +32,9 @@ jobs:
       - name: Keep release artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: Better-SMTC-Bridge-1.0.1-Windows-x64
+          name: Better-SMTC-Bridge-1.0.0-Windows-x64
           path: |
-            dist/Better-SMTC-Bridge-1.0.1-Windows-x64.zip
+            dist/Better-SMTC-Bridge-1.0.0-Windows-x64.zip
             dist/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14

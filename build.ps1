@@ -32,4 +32,4 @@ $bundleArguments = @(
 if ($LASTEXITCODE -ne 0) { throw 'Executable build failed.' }
 & $bridgePython package_release.py
 if ($LASTEXITCODE -ne 0) { throw 'Release packaging failed.' }
-Write-Output 'Built dist/Better-SMTC-Bridge-1.0.1-Windows-x64.zip'
+Write-Output 'Built dist/Better-SMTC-Bridge-1.0.0-Windows-x64.zip'

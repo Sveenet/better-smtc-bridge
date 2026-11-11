@@ -4,7 +4,7 @@ from pathlib import Path
 import zipfile
 
 root = Path(__file__).resolve().parent
-version = "1.0.1"
+version = "1.0.0"
 distribution = root / "dist"
 executable = distribution / "Better SMTC Bridge.exe"
 if not executable.is_file():

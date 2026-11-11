@@ -31,5 +31,5 @@ class Metadata:
                 self.reader = load_original().get_all_media_info
             result = await self.reader()
             self.available = "error" not in result
-            return {**result, "app_version": "1.0.1", "bridge_version": "1.0.1",
+            return {**result, "app_version": "1.0.0", "bridge_version": "1.0.0",
                     "upstream_version": "1.0.1", "bridge_name": "Better SMTC Bridge"}

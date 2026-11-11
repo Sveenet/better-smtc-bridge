@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.1 — 2026-11-11
+## 1.0.0 audio recovery update — 2026-11-11
 
 - Keeps audio frames flowing when an overlay disconnects or a browser connection stalls.
 - Bounds failed-client cleanup and isolates transient capture errors from the shared stream.
