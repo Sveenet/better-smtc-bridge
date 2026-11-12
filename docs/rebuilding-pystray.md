@@ -11,7 +11,7 @@ You may modify the library and rebuild the application with your compatible
 version. The original application source, assets and build scripts accompany
 the release in `source/`. The project adds no restriction on modifying the
 library portions or reverse engineering to debug those modifications. The
-separate permission terms for the original SMTC Bridge material still apply.
+separate rights in the original SMTC Bridge material still apply.
 
 On Windows, install Python 3.14 x64. Work in the repository root, or the
 extracted release's `source` folder. In PowerShell:

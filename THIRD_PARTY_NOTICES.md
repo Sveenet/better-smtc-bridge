@@ -1,9 +1,9 @@
 # Third-party notices
 
 Better SMTC Bridge combines original SMTC Bridge material by nutty with new
-contributions by Sveenet. The [license scope](LICENSE) distinguishes upstream
-material used with the project owner's confirmed private permission from
-Sveenet's MIT-licensed additions. Dependencies retain their own copyrights and
+contributions by Sveenet. The [license scope](LICENSE) distinguishes original
+upstream material from Sveenet's reusable [MIT-licensed additions](LICENSE-MIT).
+Dependencies retain their own copyrights and
 license terms; the additions' license does not replace them.
 Keep this document and the complete `licenses/` directory with redistributed
 release packages.
@@ -155,9 +155,8 @@ environment completeness, including their separate dependency license texts.
 ## Upstream SMTC Bridge attribution
 
 This project adapts [nutty's SMTC Bridge](https://github.com/nuttylmao/smtc-bridge)
-and preserves credit for the original code and assets. The project owner
-confirmed private permission for modification and redistribution. The reviewed
-upstream repository did not provide a public license; this project does not
-invent one or apply MIT to the original work. The private correspondence is
-not reproduced. See [provenance](docs/provenance.md) for the upstream revision,
-modified files, additions and scope of permission.
+and preserves credit for the original code and assets. The reviewed upstream
+repository did not provide a public license. This project does not relicense
+that original material or include it in the MIT grant for Sveenet's additions.
+See [provenance](docs/provenance.md) for the upstream revision, inherited files,
+original additions and licensing boundaries.

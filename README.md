@@ -2,7 +2,11 @@
 
 **Song details, album artwork, and real audio analysis for Windows stream overlays.**
 
-Better SMTC Bridge 1.0.1 extends [nutty's original SMTC Bridge](https://github.com/nuttylmao/smtc-bridge) with a live waveform and frequency spectrum. It runs on your own computer and serves both through **port 5000**. This repository and its release are private.
+Better SMTC Bridge 1.0.1 extends [nutty's original SMTC Bridge](https://github.com/nuttylmao/smtc-bridge) with a live waveform and frequency spectrum. It runs on your own computer and serves both through **port 5000**. Source code and Windows releases are available on GitHub.
+
+This project was created solely to add functionality to [nutty's original SMTC Bridge](https://github.com/nuttylmao/smtc-bridge) for seamless use in the [Universal Music widget](https://widgets.sveenet.com/universal-music/settings). It adds live audio analysis and saved output controls while retaining the original SMTC metadata interface and port **5000**.
+
+I appreciate nutty's work and the effort behind the original SMTC Bridge. This project is a good-faith extension made to add useful functionality for music widgets, with no intention of harming nutty or the original project.
 
 [Download the Windows release](https://github.com/Sveenet/better-smtc-bridge/releases/latest) · [Report a problem](https://github.com/Sveenet/better-smtc-bridge/issues)
 
@@ -43,7 +47,7 @@ The bridge supplies audio measurements; the widget renders the visuals and extra
 - For music-only reaction, route music to a separate output or virtual device and choose that output in the bridge.
 - Audio samples stay in memory. The app does not record audio files, upload audio, or call a cloud service.
 - Audio capture is enabled when you choose **Start visualizing**, or explicitly request a device in headless mode. Once enabled, it resumes from your saved output on later launches. Metadata remains available when audio capture is stopped.
-- The selected output and enabled/stopped preference are saved locally in `%LOCALAPPDATA%\BetterSMTCBridge\settings.json`. No recordings or private credentials are stored there.
+- The selected output and enabled/stopped preference are saved locally in `%LOCALAPPDATA%\BetterSMTCBridge\settings.json`. No recordings or credentials are stored there.
 - One capture and analysis pipeline serves all connected overlays, at up to 30 updates per second.
 
 ## Local API
@@ -94,7 +98,7 @@ Then open `http://127.0.0.1:5000/`. `--device <id>` explicitly starts one of the
 
 ## License and credits
 
-This is an adaptation of nutty's code, used under the repository owner's confirmed private permission. The upstream code and assets retain their author's rights. CreatorSuite additions have a separate, explicitly scoped license; see [LICENSE](LICENSE). This repository does not grant a new open-source license over nutty's work. Private permission correspondence is not included.
+Sveenet's original additions are reusable under the [MIT License](LICENSE-MIT), including modification, redistribution and commercial use with the copyright and license notice retained. The [license scope](LICENSE) and [provenance record](docs/provenance.md) identify those additions and the inherited files. Nutty's original code and assets retain their author's rights and are not relicensed by this project. Dependencies retain their own licenses. Public availability does not grant additional rights to third-party material.
 
 [nutty](https://nutty.gg/) created the original [SMTC Bridge](https://github.com/nuttylmao/smtc-bridge) and [Universal Now Playing](https://widgets.nutty.gg/now-playing/settings/). Better SMTC Bridge retains the original media-reading implementation, metadata interface, tray behavior, and upstream assets, with additional output-audio analysis and local controls. The Git history preserves the original authorship. This is a modified version maintained by Sveenet, not an official nutty release, and does not imply endorsement. See [the provenance record](docs/provenance.md) for the exact upstream revision and changes.
 

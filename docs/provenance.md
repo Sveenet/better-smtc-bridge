@@ -2,19 +2,19 @@
 
 Review date: 2026-11-10.
 
-## Upstream source and permission
+## Upstream source and licensing boundaries
 
 This project is an adaptation of
 [nuttylmao/smtc-bridge](https://github.com/nuttylmao/smtc-bridge), preserving
 credit for its code and assets. The source revision is
 [`442cdc81290a3127dea3200bcdc5883c820a328e`](https://github.com/nuttylmao/smtc-bridge/tree/442cdc81290a3127dea3200bcdc5883c820a328e).
-The reviewed tree contains no LICENSE/COPYING file. The project owner has
-confirmed private permission to modify and redistribute the upstream material.
-That private correspondence is not reproduced, and this repository does not
-grant a general sublicense or assign an invented public license to that work.
-Permission for other reuse must come from the original rights holder.
+The reviewed tree contains no LICENSE/COPYING file. Original code and assets
+retain their authors' rights. This repository does not relicense that work or
+grant downstream reuse rights to it. Rights to reuse the original material
+must be obtained separately from its rights holder.
 
 The root [LICENSE](../LICENSE) scopes MIT to Sveenet's original additions.
+[LICENSE-MIT](../LICENSE-MIT) supplies the standalone reusable license text.
 It does not apply MIT to pre-existing upstream source, icons, images or other
 assets. Existing authorship and copyright notices are preserved. Dependency
 licenses remain separate.
@@ -35,7 +35,7 @@ by the MIT terms for new contributions:
 revision and SHA-256 hashes for the upstream and adapted copies. It identifies
 modified files; it does not license the original content. The MIT grant covers
 only Sveenet's original contributions within adapted files, subject to the
-upstream permission for using the surrounding original work.
+separate rights applicable to the surrounding original work.
 
 The following are newly implemented additions by Sveenet and are covered by
 the MIT terms in the root LICENSE: `bridge.py`, `audio.py`, `server.py`,
