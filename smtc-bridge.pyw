@@ -1,5 +1,5 @@
 # Versioning
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 UPSTREAM_VERSION = "1.0.1"
 # Better SMTC Bridge additions by Sveenet. Original SMTC Bridge code by nutty.
 # See LICENSE and docs/provenance.md for separate rights and private permission.

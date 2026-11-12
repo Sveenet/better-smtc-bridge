@@ -12,8 +12,12 @@ from metadata import Metadata
 from prefs import Preferences
 
 APP_NAME = "Better SMTC Bridge"
-VERSION = "1.0.0"
-TRUSTED_ORIGINS = {"https://creator-suite-amv.pages.dev", "https://widgets.nutty.gg"}
+VERSION = "1.0.1"
+TRUSTED_ORIGINS = {
+    "https://creator-suite-amv.pages.dev",
+    "https://widgets.nutty.gg",
+    "https://widgets.sveenet.com",
+}
 
 
 def origin_allowed(origin, extra=()):

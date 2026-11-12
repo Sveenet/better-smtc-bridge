@@ -278,6 +278,21 @@ class APITests(unittest.IsolatedAsyncioTestCase):
             async with self.client.post(self.url + "/api/start", data=json.dumps(malformed), headers={**headers, "Content-Type": "application/json"}) as response:
                 self.assertEqual(response.status, 400)
 
+    async def test_sveenhub_widgets_can_read_metadata_and_audio_but_not_controls(self):
+        origin = "https://widgets.sveenet.com"
+        async with self.client.get(self.url + "/now-playing", headers={"Origin": origin}) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.headers["Access-Control-Allow-Origin"], origin)
+        async with self.client.ws_connect(self.url + "/audio", origin=origin) as socket:
+            self.assertFalse((await socket.receive_json(timeout=2))["connected"])
+        for blocked in ("https://widgets.sveenet.com.attacker.example", "http://widgets.sveenet.com"):
+            async with self.client.get(self.url + "/now-playing", headers={"Origin": blocked}) as response:
+                self.assertEqual(response.status, 403)
+        async with self.client.get(self.url + "/control", headers={"Origin": origin}) as response:
+            self.assertEqual(response.status, 403)
+        async with self.client.post(self.url + "/api/start", json={"device": 1}, headers={"Origin": origin}) as response:
+            self.assertEqual(response.status, 403)
+
     async def test_websocket_schema_and_stop(self):
         async with self.client.ws_connect(self.url + "/audio", origin="https://widgets.nutty.gg") as socket:
             self.assertFalse((await socket.receive_json())["connected"])

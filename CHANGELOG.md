@@ -1,11 +1,13 @@
 # Changelog
 
-## 1.0.0 audio recovery update — 2026-11-11
+## 1.0.1 — 2026-11-13
 
 - Keeps audio frames flowing when an overlay disconnects or a browser connection stalls.
 - Bounds failed-client cleanup and isolates transient capture errors from the shared stream.
 - Adds regression coverage for sustained audio, client failures, and recovery.
 - Preserves the saved output, quiet startup, and port 5000.
+- Supports read-only metadata and audio access from widgets.sveenet.com.
+- Restores the original v1.0.0 release separately; later fixes are released as v1.0.1.
 
 ## 1.0.0 — 2026-11-10
 
