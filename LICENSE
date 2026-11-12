@@ -7,13 +7,11 @@ and new contributions by Sveenet, plus separately licensed dependencies.
 Original SMTC Bridge code and assets
 -----------------------------------
 
-Copyright remains with the original authors. The project owner has confirmed
-private permission to modify and redistribute the original SMTC Bridge
-material used in this project. That correspondence is not reproduced here.
-The reviewed upstream repository provides no public license. This file does
-not grant a sublicense or general reuse permission for the upstream code or
-assets. Obtain applicable permission from the original rights holder before
-reusing that material. See docs/provenance.md for its source and boundaries.
+Copyright remains with the original authors. The reviewed upstream repository
+provides no public license. This project does not relicense or grant general
+reuse rights to the original SMTC Bridge code or assets. Rights to reuse that
+material must be obtained separately from its rights holder. See
+docs/provenance.md for the source and boundaries of that material.
 
 Original additions by Sveenet
 -----------------------------
@@ -22,6 +20,9 @@ The following MIT terms apply only to the original additions identified in
 docs/provenance.md. In files containing upstream material, these terms cover
 only Sveenet's original contributions, never the pre-existing code or assets.
 They do not override the original rights holder's terms or dependency licenses.
+A standalone copy of these MIT terms is supplied in LICENSE-MIT. Our original
+additions may be used, modified, redistributed and used commercially under
+those terms, with the required copyright and license notice retained.
 
 MIT License
 

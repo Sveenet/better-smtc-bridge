@@ -16,7 +16,7 @@ source_files = ["bridge.py", "audio.py", "server.py", "metadata.py", "artwork.py
                 "requirements-build.txt", "requirements-lock.txt", "Start Better SMTC Bridge.bat"]
 with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as release:
     release.write(executable, executable.name)
-    for name in ("README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md", "RELEASE_NOTES.md"):
+    for name in ("README.md", "LICENSE", "LICENSE-MIT", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md", "RELEASE_NOTES.md"):
         path = root / name
         if path.is_file():
             release.write(path, name)
@@ -31,7 +31,7 @@ with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as release:
             if path.is_file() and "__pycache__" not in path.parts:
                 release.write(path, "source/" + path.relative_to(root).as_posix())
     # The extracted source can build without finding license files in its parent.
-    for name in ("LICENSE", "THIRD_PARTY_NOTICES.md"):
+    for name in ("LICENSE", "LICENSE-MIT", "THIRD_PARTY_NOTICES.md"):
         release.write(root / name, "source/" + name)
     for path in sorted((root / "licenses").rglob("*")):
         if path.is_file():

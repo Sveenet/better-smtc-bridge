@@ -23,7 +23,7 @@ $bundleArguments = @(
     '--add-data', 'control.html:.', '--add-data', 'assets:assets',
     '--add-data', 'smtc-bridge.pyw:.', '--add-data', 'smtc-bridge.ico:.',
     '--add-data', 'licenses:licenses', '--add-data', 'LICENSE:.',
-    '--add-data', 'THIRD_PARTY_NOTICES.md:.',
+    '--add-data', 'LICENSE-MIT:.', '--add-data', 'THIRD_PARTY_NOTICES.md:.',
     '--collect-submodules', 'winrt', '--collect-submodules', 'aiohttp',
     '--hidden-import', 'pystray._win32', '--hidden-import', 'plyer.platforms.win.notification',
     'bridge.py'
