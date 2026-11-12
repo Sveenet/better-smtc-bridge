@@ -482,8 +482,8 @@ try:
             pystray.MenuItem("View Data (JSON)", lambda: webbrowser.open(f"http://{DISPLAY_HOST}:{PORT}/now-playing")),
             pystray.MenuItem("View Active Sessions", lambda: webbrowser.open(f"http://{DISPLAY_HOST}:{PORT}/sessions")),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("★ Customize Overlay", lambda: webbrowser.open(f"https://creator-suite-amv.pages.dev/universal-music/settings/")),
-            pystray.MenuItem("★ Try my stream widgets!", lambda: webbrowser.open(f"https://creator-suite-amv.pages.dev/")),
+            pystray.MenuItem("★ Customize Overlay", lambda: webbrowser.open(f"https://widgets.sveenet.com/universal-music/settings")),
+            pystray.MenuItem("★ Try my stream widgets!", lambda: webbrowser.open(f"https://sveenet.com/widgets")),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(
                 "Start with Windows", 

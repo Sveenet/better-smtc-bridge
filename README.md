@@ -22,7 +22,7 @@ The program leaves the original SMTC installation, audio routing, OBS configurat
 
 ## Use with CreatorSuite Universal Music
 
-Open [Universal Music settings](https://creator-suite-amv.pages.dev/universal-music/settings/) and choose a creative theme:
+Open [Universal Music settings](https://widgets.sveenet.com/universal-music/settings) and choose a creative theme:
 
 - **Wave Line** — a live waveform, with adjustable thickness and amplitude.
 - **Mirrored Bars** — a mirrored frequency spectrum, with adjustable bar count, spacing, and corners.

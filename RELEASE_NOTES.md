@@ -3,7 +3,8 @@ Better SMTC Bridge 1.0.1 fixes audio visualizations freezing after browser sourc
 Download the **Windows x64 ZIP**, extract the entire folder, close the original SMTC Bridge, and open **Better SMTC Bridge.exe**. Select your music output once and click **Start visualizing**. Later launches reconnect automatically and stay in the tray without reopening the selection page. No separate Python installation is needed for the packaged release.
 
 - Existing song metadata remains on port **5000**.
-- Supports the current widgets.sveenet.com site for read-only metadata and audio access.
+- Supports [the widget website](https://sveenet.com/widgets) for read-only metadata and audio access.
+- Tray links open the current widget website and [Universal Now Playing settings](https://widgets.sveenet.com/universal-music/settings).
 - Restores normal versioning: the original v1.0.0 package remains available separately.
 - Audio waveforms and spectrum use **ws://127.0.0.1:5000/audio**.
 - Your output selection is remembered by name. Missing outputs are retried automatically; Stop audio also remains stopped across restarts.

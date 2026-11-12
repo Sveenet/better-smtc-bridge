@@ -7,6 +7,7 @@
 - Adds regression coverage for sustained audio, client failures, and recovery.
 - Preserves the saved output, quiet startup, and port 5000.
 - Supports read-only metadata and audio access from widgets.sveenet.com.
+- Opens the current widget website and Universal Now Playing settings from the tray.
 - Restores the original v1.0.0 release separately; later fixes are released as v1.0.1.
 
 ## 1.0.0 — 2026-11-10
